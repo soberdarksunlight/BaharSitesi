@@ -1,3 +1,9 @@
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using WebApplication1.Models;
+using WebApplication1.Repository;
+
 namespace WebApplication1
 {
     public class Program
@@ -8,8 +14,14 @@ namespace WebApplication1
 
             // Add services to the container.
             builder.Services.AddControllersWithViews();
-
+            builder.Services.AddDbContext<BaharSitesiDbContext>(options => options.UseSqlServer(builder.Configuration["ConnectionStrings:BaharSitesiConnStr"]));
+            builder.Services.AddScoped<IUserRepository, UserRepository>();
+            builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie();
+            builder.Services.AddScoped<DbInitializer>();
+            
             var app = builder.Build();
+
+            app.UseItToSeedSqlServer();
 
             // Configure the HTTP request pipeline.
             if (!app.Environment.IsDevelopment())
@@ -23,12 +35,19 @@ namespace WebApplication1
             app.UseStaticFiles();
 
             app.UseRouting();
-
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.MapControllerRoute(
                 name: "default",
                 pattern: "{controller=Home}/{action=Index}/{id?}");
+
+            app.MapControllerRoute(
+                name: "Login",
+                pattern:"Login",
+                defaults: new {controller="Account" , action="Login"});
+
+            
 
             app.Run();
         }
